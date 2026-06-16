@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -10,6 +11,9 @@ import (
 
 	"minecraft/internal/config"
 	"minecraft/internal/db"
+	bookController "minecraft/internal/server/controllers"
+	bookRouter "minecraft/internal/server/routers"
+	bookService "minecraft/internal/server/services"
 )
 
 func main() {
@@ -22,23 +26,33 @@ func main() {
 	}
 	defer database.Close()
 
-	// Здесь позже будет инициализация роутера, сервер и т.д.
+	// Initialize Service, Controller and Router
+	bService := bookService.NewBookService()
+	bController := bookController.NewBookController(bService)
+	bookRouter.SetupBooksRouter(bController)
+
+	server := &http.Server{
+		Addr: ":8080",
+	}
 
 	log.Printf("🚀 Приложение запущено. Нажмите Ctrl+C для graceful shutdown.")
+
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatal(err)
+		}
+	}()
 
 	// Graceful shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-
 	<-quit
-	log.Println("Получен сигнал завершения, останавливаем приложение...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if err := database.Close(); err != nil {
-		log.Printf("Ошибка при закрытии БД: %v", err)
-	}
+	server.Shutdown(ctx)
+	database.Close()
 
 	log.Println("Приложение успешно остановлено.")
 }
