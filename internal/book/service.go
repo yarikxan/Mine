@@ -1,37 +1,35 @@
-package bookService
+// service.go
+package book
 
 import (
 	"errors"
-)
 
-type Book struct {
-	ID     string `json:"id"`
-	Title  string `json:"title"`
-	Author string `json:"author"`
-}
+	"github.com/google/uuid"
+)
 
 var ErrBookNotFound = errors.New("book not found")
 
-type BookService struct {
+type Service struct {
 	books []Book
+	repo  *Repository
 }
 
-func NewBookService() *BookService {
-	return &BookService{
+func NewService() *Service {
+	return &Service{
 		books: []Book{},
 	}
 }
 
-func (s *BookService) Create(book Book) (Book, error) {
+func (s *Service) Create(book Book) (Book, error) {
 	s.books = append(s.books, book)
 	return book, nil
 }
 
-func (s *BookService) GetAll() ([]Book, error) {
+func (s *Service) GetAll() ([]Book, error) {
 	return s.books, nil
 }
 
-func (s *BookService) GetByID(id string) (Book, error) {
+func (s *Service) GetByID(id uuid.UUID) (Book, error) {
 	for _, book := range s.books {
 		if book.ID == id {
 			return book, nil
@@ -40,7 +38,7 @@ func (s *BookService) GetByID(id string) (Book, error) {
 	return Book{}, ErrBookNotFound
 }
 
-func (s *BookService) Update(id string, updatedBook Book) (Book, error) {
+func (s *Service) Update(id uuid.UUID, updatedBook Book) (Book, error) {
 	for idx, book := range s.books {
 		if book.ID == id {
 			s.books[idx] = updatedBook
@@ -50,7 +48,7 @@ func (s *BookService) Update(id string, updatedBook Book) (Book, error) {
 	return Book{}, ErrBookNotFound
 }
 
-func (s *BookService) Delete(id string) error {
+func (s *Service) Delete(id uuid.UUID) error {
 	for i, book := range s.books {
 		if book.ID == id {
 			s.books = append(s.books[:i], s.books[i+1:]...)
