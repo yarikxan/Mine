@@ -1,0 +1,148 @@
+definitions:
+  book.Book:
+    properties:
+      author:
+        type: string
+      id:
+        type: string
+      isbn:
+        type: string
+      title:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: This is a dummy.
+  title: MinecraftTest
+  version: "1.0"
+paths:
+  /books:
+    delete:
+      description: delete book in DB
+      parameters:
+      - description: Book ID
+        in: path
+        name: id
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/book.Book'
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: delete Book by id
+      tags:
+      - books
+    get:
+      description: get array of books by params
+      parameters:
+      - collectionFormat: csv
+        description: Book IDs
+        in: query
+        items:
+          type: string
+        name: ids
+        type: array
+      - description: Book name
+        in: query
+        name: name
+        type: string
+      - description: Book author
+        in: query
+        name: author
+        type: string
+      - description: Book isbn
+        in: query
+        name: isbn
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/book.Book'
+            type: array
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: get books list
+      tags:
+      - books
+    post:
+      consumes:
+      - application/json
+      description: create new book in DB
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/book.Book'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: request to create a book
+      tags:
+      - books
+    put:
+      consumes:
+      - application/json
+      description: update book in DB
+      parameters:
+      - description: Book ID
+        in: path
+        name: id
+        type: string
+      - description: Book update fields
+        in: body
+        name: updateDto
+        required: true
+        schema:
+          $ref: '#/definitions/book.Book'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/book.Book'
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: update Book by id
+      tags:
+      - books
+  /books/{id}:
+    get:
+      description: get book by params
+      parameters:
+      - description: Book ID
+        in: path
+        name: id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/book.Book'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: get single
+      tags:
+      - books
+swagger: "2.0"

@@ -9,27 +9,32 @@ import (
 	"syscall"
 	"time"
 
+	_ "minecraft/docs"
+	"minecraft/internal/book"
 	"minecraft/internal/config"
 	"minecraft/internal/db"
-	bookController "minecraft/internal/server/controllers"
-	bookRouter "minecraft/internal/server/routers"
-	bookService "minecraft/internal/server/services"
+	"minecraft/internal/swagger"
 )
 
+// @title			MinecraftTest
+// @version		1.0
+// @description	This is a dummy.
 func main() {
 	cfg := config.Load()
 
 	// Подключаемся к БД
 	database, err := db.New(cfg)
 	if err != nil {
-		log.Fatal("Ошибка подключения к базе:", err)
+		log.Fatal("Ошибка подключения к базе: ", err)
 	}
 	defer database.Close()
 
 	// Initialize Service, Controller and Router
-	bService := bookService.NewBookService()
-	bController := bookController.NewBookController(bService)
-	bookRouter.SetupBooksRouter(bController)
+	bService := book.NewService()
+	bController := book.NewHandler(bService)
+	book.SetupBooksRouter(bController)
+
+	swagger.SetupSwaggerRouter()
 
 	server := &http.Server{
 		Addr: ":8080",

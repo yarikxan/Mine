@@ -1,4 +1,4 @@
-package baseItemDto
+package common
 
 import (
 	"time"

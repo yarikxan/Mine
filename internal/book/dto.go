@@ -1,20 +1,21 @@
-package bookDto
+// dto.go
+package book
 
 import (
-	baseItemDto "minecraft/internal/server/dto/base-item-dto"
+	"minecraft/internal/common"
 
 	"github.com/go-playground/validator/v10"
 )
 
 var validate = validator.New()
 
-type bookCreateRequestDto struct {
+type BookCreateRequestDto struct {
 	Isbn   string `json:"isbn" validate:"required,min=1,max=13"`
 	Title  string `json:"title" validate:"required,min=1,max=255"`
 	Author string `json:"author" validate:"required,min=1,max=100"`
 }
 
-func (b *bookCreateRequestDto) Validate() error {
+func (b *BookCreateRequestDto) Validate() error {
 	return validate.Struct(b)
 }
 
@@ -22,11 +23,11 @@ type bookCreateResponseDto struct {
 	Isbn   string `json:"isbn"`
 	Title  string `json:"title"`
 	Author string `json:"author"`
-	baseItemDto.BaseItemResponseDto
+	common.BaseItemResponseDto
 }
 
 type BookRequest struct {
-	baseItemDto.BaseItemRequestDto
+	common.BaseItemRequestDto
 	Isbn *string `json:"isbn,omitempty" validate:"max=13"`
 }
 
@@ -47,7 +48,7 @@ func (b *BookListRequest) Validate() error {
 }
 
 type BookListResponse struct {
-	pagination baseItemDto.BasePaginationDto
+	pagination common.BasePaginationDto
 	items      []bookCreateResponseDto
 }
 
