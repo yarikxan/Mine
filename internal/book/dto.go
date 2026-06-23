@@ -3,8 +3,10 @@ package book
 
 import (
 	"minecraft/internal/common"
+	"time"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 )
 
 var validate = validator.New()
@@ -20,22 +22,13 @@ func (b *BookCreateRequestDto) Validate() error {
 }
 
 type bookCreateResponseDto struct {
-	Isbn   string `json:"isbn"`
-	Title  string `json:"title"`
-	Author string `json:"author"`
-	common.BaseItemResponseDto
+	Id        uuid.UUID
+	Isbn      string
+	Title     string
+	Author    string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
-
-type BookRequest struct {
-	common.BaseItemRequestDto
-	Isbn *string `json:"isbn,omitempty" validate:"max=13"`
-}
-
-func (b *BookRequest) Validate() error {
-	return validate.Struct(b)
-}
-
-type BookResponse bookCreateResponseDto
 
 type BookListRequest struct {
 	Offset *int    `json:"offset,omitempty" validate:"min=0"`
@@ -51,6 +44,17 @@ type BookListResponse struct {
 	pagination common.BasePaginationDto
 	items      []bookCreateResponseDto
 }
+
+type BookRequest struct {
+	common.BaseItemRequestDto
+	Isbn *string `json:"isbn,omitempty" validate:"max=13"`
+}
+
+func (b *BookRequest) Validate() error {
+	return validate.Struct(b)
+}
+
+type BookResponse bookCreateResponseDto
 
 type BookUpdateRequest struct {
 	Isbn   *string `json:"isbn,omitempty" validate:"min=1,max=13"`

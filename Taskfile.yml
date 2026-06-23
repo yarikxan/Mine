@@ -1,0 +1,29 @@
+version: '3'
+
+dotenv:
+  - .env
+
+vars:
+  DATABASE_URL: >-
+    postgres://{{.DB_USER}}:{{.DB_PASSWORD}}@{{.DB_HOST}}:{{.DB_PORT}}/{{.DB_NAME}}?sslmode=disable
+
+tasks:
+  run:
+    cmds:
+      - go run ./cmd/mine
+
+  swagger:
+    cmds:
+      - swag init -g cmd/mine/main.go --parseInternal
+
+  migrate-force:
+    cmds:
+      - migrate -path migrations -database "{{.DATABASE_URL}}" force {{.VERSION}}
+
+  migrate-up:
+    cmds:
+      - migrate -path migrations -database "{{.DATABASE_URL}}" up
+  
+  migrate-down:
+    cmds:
+      - migrate -path migrations -database "{{.DATABASE_URL}}" down

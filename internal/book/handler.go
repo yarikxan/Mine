@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"minecraft/internal/common"
 	"net/http"
+	"strconv"
 
 	"github.com/google/uuid"
 )
@@ -29,20 +30,26 @@ func NewHandler(service *Service) *Handler {
 
 // CreateBook godoc
 //
-//	@Summary		request to create a book
-//	@Description	create new book in DB
+//	@Summary		Create a new book
+//	@Description	Creates a new book in DB
 //	@Tags			books
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	book.Book
+//	@Param			book body book.BookCreateRequestDto true "Book details"
+//	@Success		201	{object}	book.BookCreateRequestDto
 //	@Failure		400
 //	@Failure		500
 //	@Router			/books [post]
 func (c *Handler) CreateBook(w http.ResponseWriter, r *http.Request) {
-	var book Book
-	err := json.NewDecoder(r.Body).Decode(&book)
-	if err != nil {
+	var book BookCreateRequestDto
+
+	if err := json.NewDecoder(r.Body).Decode(&book); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	if err := validate.Struct(book); err != nil {
+		http.Error(w, "Validation failed: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -52,26 +59,55 @@ func (c *Handler) CreateBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(createdBook)
 }
 
 // GetBooks godoc
 //
-//	@Summary		get books list
-//	@Description	get array of books by params
+//	@Summary		List all books
+//	@Description	Returns a paginated list of books with optional search
 //	@Tags			books
 //	@Produce		json
-//	@Param			ids		query	[]string	false	"Book IDs"
-//	@Param			name	query	string		false	"Book name"
-//	@Param			author	query	string		false	"Book author"
-//	@Param			isbn	query	string		false	"Book isbn"
-//	@Success		200		{array}	book.Book
+//	@Param			offset query integer false "offset amount" default(0)
+//	@Param			limit query integer false "Items per page" default(20)
+//	@Param			search query string false "Search by author or title"
+//	@Success		200		book.BookListResponse
 //	@Failure		400
 //	@Failure		500
 //	@Router			/books [get]
 func (c *Handler) GetBooks(w http.ResponseWriter, r *http.Request) {
-	books, err := c.service.GetAll()
+	var params BookListRequest
+
+	if value := r.URL.Query().Get("offset"); value != "" {
+		offset, err := strconv.Atoi(value)
+		if err != nil {
+			// http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		params.Offset = &offset
+	}
+
+	if value := r.URL.Query().Get("limit"); value != "" {
+		limit, err := strconv.Atoi(value)
+		if err != nil {
+			// http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		params.Limit = &limit
+	}
+
+	if search, exists := r.URL.Query()["search"]; exists {
+		params.Search = &search[0]
+	}
+
+	if err := params.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	books, err := c.service.GetAll(params)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -114,19 +150,20 @@ func (c *Handler) GetBook(w http.ResponseWriter, r *http.Request) {
 
 // UpdateBook godoc
 //
-//	@Summary		update Book by id
-//	@Description	update book in DB
+//	@Summary		Update a book
+//	@Description	Partially updates an existing book
 //	@Tags			books
 //	@Accept			json
 //	@Produce		json
 //	@Param			id			path		string		false	"Book ID"
-//	@Param			updateDto	body		book.Book	true	"Book update fields"
-//	@Success		200			{object}	book.Book
+//	@Param			updateDto	body		book.BookUpdateRequest	true	"Book update fields"
+//	@Success		200			{object}	book.BookUpdateResponse
 //	@Failure		404
 //	@Failure		500
-//	@Router			/books [put]
+//	@Router			/books/{id} [put]
 func (c *Handler) UpdateBook(w http.ResponseWriter, r *http.Request) {
 	var q common.BaseItemRequestDto
+	var updatedBook BookUpdateRequest
 
 	id, parseError := uuid.Parse(r.URL.Query().Get("id"))
 	if parseError != nil {
@@ -134,16 +171,12 @@ func (c *Handler) UpdateBook(w http.ResponseWriter, r *http.Request) {
 	}
 	q.Id = id
 
-	var updatedBook Book
-	err := json.NewDecoder(r.Body).Decode(&updatedBook)
-
-	if err != nil {
-		http.Error(w, "Invalid request Payload", http.StatusBadRequest)
+	if err := json.NewDecoder(r.Body).Decode(&updatedBook); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
 
-	_, err = c.service.Update(q.Id, updatedBook)
-	if err != nil {
+	if _, err := c.service.Update(q.Id, updatedBook); err != nil {
 		http.Error(w, "Book not found", http.StatusNotFound)
 		return
 	}
@@ -161,7 +194,7 @@ func (c *Handler) UpdateBook(w http.ResponseWriter, r *http.Request) {
 //	@Success		200	{object}	book.Book
 //	@Failure		404
 //	@Failure		500
-//	@Router			/books [delete]
+//	@Router			/books/{id} [delete]
 func (c *Handler) DeleteBook(w http.ResponseWriter, r *http.Request) {
 	var q common.BaseItemRequestDto
 

@@ -17,25 +17,6 @@ info:
   version: "1.0"
 paths:
   /books:
-    delete:
-      description: delete book in DB
-      parameters:
-      - description: Book ID
-        in: path
-        name: id
-        type: string
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/book.Book'
-        "404":
-          description: Not Found
-        "500":
-          description: Internal Server Error
-      summary: delete Book by id
-      tags:
-      - books
     get:
       description: get array of books by params
       parameters:
@@ -92,6 +73,49 @@ paths:
       summary: request to create a book
       tags:
       - books
+  /books/{id}:
+    delete:
+      description: delete book in DB
+      parameters:
+      - description: Book ID
+        in: path
+        name: id
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/book.Book'
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: delete Book by id
+      tags:
+      - books
+    get:
+      description: get book by params
+      parameters:
+      - description: Book ID
+        in: path
+        name: id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/book.Book'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: get single
+      tags:
+      - books
     put:
       consumes:
       - application/json
@@ -119,30 +143,6 @@ paths:
         "500":
           description: Internal Server Error
       summary: update Book by id
-      tags:
-      - books
-  /books/{id}:
-    get:
-      description: get book by params
-      parameters:
-      - description: Book ID
-        in: path
-        name: id
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/book.Book'
-        "400":
-          description: Bad Request
-        "404":
-          description: Not Found
-        "500":
-          description: Internal Server Error
-      summary: get single
       tags:
       - books
 swagger: "2.0"
